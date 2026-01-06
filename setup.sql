@@ -18,7 +18,7 @@ create table categoria_reato (
 create table luogo (
     id int auto_increment primary key,
     nome varchar(128) not null,
-    tipo enum('Magazzino', 'Laboratorio', 'Scena del Crimine', 'Archivio', 'Ufficio') not null,
+    tipo enum('Magazzino', 'Laboratorio', 'Scena del Crimine', 'Archivio', 'Ufficio', "Altro") not null,
     indirizzo text not null,
     descrizione text
 );
@@ -136,6 +136,17 @@ begin
     set id_luogo_corrente = new.id_luogo
     where id = new.id_reperto;
 end $$
+
+-- 1.2 non si puo creare un fascicolo chiuso o  archiviato
+create trigger no_insert_fascicolo_chiuso_archiviato
+before insert on fascicolo
+for each row
+begin
+	if(new.stato != 'Aperto') then
+		signal sqlstate '45000'
+        set message_text = 'errore: imposssibile creare fascicolo archiviato o chiuso';
+	end if;
+end$$
 
 
 -- 2. sicurezza (insert): analista non può lavorare se coinvolto nel caso
