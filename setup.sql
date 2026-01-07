@@ -269,7 +269,7 @@ begin
     end if;
 end $$
 
--- 4. conflitto interessi: l'agente non può essere scelto se è già coinvolto
+-- 4.1 conflitto interessi: l'agente non può essere scelto se è già coinvolto
 create trigger check_update_conflitto_interessi_agente_fascicolo
 before update on fascicolo
 for each row
@@ -285,7 +285,7 @@ begin
     end if;
 end $$
 
--- 4.1 conflitto interessi: non posso aggiungere l'agente resabile nei coinvolti
+-- 4.2 conflitto interessi: non posso aggiungere l'agente resabile nei coinvolti
 -- devo prima sollevarlo dall'incarico, per non creare incongruenze.
 create trigger check_insert_conflitto_interessi_agente_coinvolgimento
 before insert on coinvolgimento
@@ -304,7 +304,7 @@ begin
 end $$
 
 -- 5. blocco fascicolo chiuso (insert): reperti
-create trigger check_no_insert_reperto_caso_chiuso
+create trigger check_no_insert_reperto_caso_chiuso_archiviato
 before insert on reperto
 for each row
 begin
@@ -321,7 +321,7 @@ begin
 end $$
 
 -- 5.1 blocco fascicolo chiuso (update): reperti
-create trigger check_no_update_reperto_caso_chiuso
+create trigger check_no_update_reperto_caso_chiuso_archiviato
 before update on reperto
 for each row
 begin
@@ -339,7 +339,7 @@ end $$
 
 
 -- 6. blocco fascicolo chiuso (insert): persone coinvolte
-create trigger check_no_insert_coinvolgimento_caso_chiuso
+create trigger check_no_insert_coinvolgimento_caso_chiuso_archiviato
 before insert on coinvolgimento
 for each row
 begin
@@ -356,7 +356,7 @@ begin
 end $$
 
 -- 6.1 blocco fascicolo chiuso (update): persone coinvolte
-create trigger check_no_update_coinvolgimento_caso_chiuso
+create trigger check_no_update_coinvolgimento_caso_chiuso_archiviato
 before update on coinvolgimento
 for each row
 begin
@@ -374,7 +374,7 @@ end $$
 
 
 -- 7. blocco fascicolo chiuso (insert): analisi
-create trigger check_no_insert_analisi_caso_chiuso
+create trigger check_no_insert_analisi_caso_chiuso_archiviato
 before insert on analisi_laboratorio
 for each row
 begin
@@ -392,7 +392,7 @@ begin
 end $$
 
 -- 7.1 blocco fascicolo chiuso (update): analisi
-create trigger check_no_update_analisi_caso_chiuso
+create trigger check_no_update_analisi_caso_chiuso_archiviato
 before update on analisi_laboratorio
 for each row
 begin
@@ -487,7 +487,8 @@ create trigger strict_update_persona
 before update on persona
 for each row
 begin
-    if new.id <> old.id then
+    if new.id <> old.id or
+    new.codice_fiscale <> old.codice_fiscale then
         signal sqlstate '45000'
         set message_text = 'errore: impossibile modificare id';
     end if;
