@@ -1,6 +1,6 @@
 -- --------------------------------------------------------------------------
--- Ardi Ndreu - 
--- Rayan Moh'd -
+-- Ardi Ndreu - 7161575
+-- Rayan Hakam Taleb Moh’d - 7157792
 -- Swaran Singh - 7159864
 -- --------------------------------------------------------------------------
 -- --------------------------------------------------------------------------
@@ -317,6 +317,28 @@ begin
         signal sqlstate '45000'
         set message_text = 'errore: impossibile aggiungere il responsabile del caso come soggetto coinvolto.';
     end if;
+end $$
+
+-- 4.3 conflitto interessi: un agente non può essere responsabile di un reperto se coinvolto nel caso.
+create trigger check_inseret_conflitto_agente_catena_custodia
+before insert on catena_custodia
+for each row
+begin
+	declare id_fascicolo_reperto int;
+    
+    select id_fascicolo into id_fascicolo_reperto
+    from reperto
+    where new.id_reperto = id;
+    
+	if exists (
+		select *
+        from coinvolgimento
+        where new.id_agente_responsabile = id_persona
+        and id_fascicolo_reperto = id_fascicolo
+	)then
+		signal sqlstate '45000'
+        set message_text = 'errore: questo agente non può custodire questo reperto';
+	end if;
 end $$
 
 -- 5. blocco fascicolo chiuso (insert): reperti
