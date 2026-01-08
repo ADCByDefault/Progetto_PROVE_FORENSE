@@ -122,13 +122,13 @@ create table catena_custodia (
 create table analisi_laboratorio (
     id int auto_increment primary key,
     descrizione text not null,
-    esito text,
+    esito text not null,
     
     id_reperto int not null,
     id_analista int not null,
     
-    data_inizio datetime default current_timestamp,
-    data_esito datetime,
+    data_inizio datetime not null,
+    data_esito datetime not null,
     
     foreign key (id_reperto) references reperto(id) on delete no action,
     foreign key (id_analista) references persona(id)
@@ -146,15 +146,15 @@ delimiter $$
 create procedure risali_albero_reperti(in id_reperto int)
 begin
 	with recursive albero as (
-		select id, codice, categoria, descrizione, 0 as livello
+		select id, id_reperto_padre, codice, categoria, descrizione, 0 as livello
         from reperto
         where id = id_reperto
         
         union all
         
-        select padre.id, padre.codice, padre.categoria, padre.descrizione, figlio.livello + 1
+        select padre.id, padre.id_reperto_padre, padre.codice, padre.categoria, padre.descrizione, figlio.livello - 1
         from reperto padre
-		join albero figlio on padre.id = filgio.id_reperto_padre
+		join albero figlio on padre.id = figlio.id_reperto_padre
     )
     select * from albero;
 end $$
@@ -163,13 +163,13 @@ end $$
 create procedure trova_tutti_discendenti(in id_reperto int)
 begin
 	with recursive albero as (
-		select id, codice, categoria, descrizione, 0 as livello
+		select id, id_reperto_padre, codice, categoria, descrizione, 0 as livello
         from reperto
         where id = id_reperto_padre
         
         union all
         
-        select figlio.id, filgio.codice, figlio.categoria, figlio.descrizione, livello - 1
+        select figlio.id, figlio.id_reperto_padre, figlio.codice, figlio.categoria, figlio.descrizione, livello + 1
         from reperto figlio
 		join albero padre on figlio.id_reperto_padre = padre.id
     )
@@ -191,7 +191,7 @@ end $$
 -- 3 crea sotto reperto
 create procedure crea_reperto_figlio (
 	in in_id_reperto_padre int,
-    in in_id_codice varchar(32),
+    in in_codice varchar(32),
     in in_descrizione text,
     in in_categoria enum ('Biologico', 'Chimico', 'Traccia', 'Balistico', 'Informatico', 'Documentale', 'Generico'),
     in in_agente_operante int
@@ -203,10 +203,10 @@ begin
     
     select id_fascicolo, id_luogo_corrente into t_id_fascicolo, t_id_luogo
     from reperto
-    where id= in_id_reperto_padre;
+    where id = in_id_reperto_padre;
     
     insert into reperto (codice, descrizione, categoria, id_reperto_padre, id_fascicolo, id_luogo_corrente)
-    values (in_codice, in_descrizione, in_categoria, in_reperto_padre, t_id_fascicolo, t_id_luogo);
+    values (in_codice, in_descrizione, in_categoria, in_id_reperto_padre, t_id_fascicolo, t_id_luogo);
     
     set t_id_reperto = last_insert_id();
     
@@ -571,7 +571,7 @@ delimiter ;
 create or replace view dettagli_reperti as
 	select
 		r.codice as codice_reperto, r.descrizione, r.categoria, r.data_inserimento,
-		f.codice as codice_fascicolo, f.stato,
+		f.codice as codice_fascicolo, f.stato as stato_fascicolo,
 		l.nome as luogo_corrente,
 		a.esito as analisi
 	from reperto r
@@ -597,7 +597,7 @@ create or replace view storico_spostamenti as
 -- 3. registro dei coinvolgimenti
 create or replace view registro_coinvolgimenti as
 	select
-		f.codice as codice_fascicolo, f.stato, f.priorita,
+		f.codice as codice_fascicolo, f.stato as stato_fascicolo, f.priorita as priorita_fascicolo,
         concat(p.nome, ' ', p.cognome) as soggetto, 
         c.tipo, c.descrizione as note
     from coinvolgimento c
