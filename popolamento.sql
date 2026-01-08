@@ -1,6 +1,21 @@
 -- --------------------------------------------------------------------------
--- Popolamento del database
+-- Ardi Ndreu - 
+-- Rayan Moh'd -
+-- Swaran Singh - 7159864
 -- --------------------------------------------------------------------------
+-- --------------------------------------------------------------------------
+-- Ambiente:
+-- Windows 11
+-- MySQL Server 8.0
+-- MySQL Workbench 8.0.43
+-- --------------------------------------------------------------------------
+-- --------------------------------------------------------------------------
+-- per la crezione del database eseguire il file setup.sql
+-- il presente codice è stato, in parte, scritto con l'utilizzo di strumenti esterni.
+-- --------------------------------------------------------------------------
+
+
+use prove_forense;
 
 -- 1. Categoria Reato
 INSERT INTO categoria_reato (nome, descrizione) VALUES
@@ -257,19 +272,34 @@ UPDATE fascicolo SET stato = 'Chiuso' WHERE codice = 'EST/2024/003'; -- ID 16
 
 -- Fascicoli di maltrattamenti risolti
 UPDATE fascicolo SET stato = 'Chiuso' WHERE codice = 'MAL/2023/009'; -- ID 9
-UPDATE fascicolo SET stato = 'Chiuso' WHERE codice = 'MAL/2024/005'; -- ID 18 (già chiuso, confermiamo)
 
 -- Fascicoli di falso risolti
-UPDATE fascicolo SET stato = 'Chiuso' WHERE codice = 'FAL/2023/008'; -- ID 8 (già chiuso, confermiamo)
 UPDATE fascicolo SET stato = 'Chiuso' WHERE codice = 'FAL/2024/004'; -- ID 17
 
-
--- 2. ARCHIVIARE alcuni fascicoli già chiusi da tempo (stato = 'Archiviato')
--- Fascicoli di spaccio già chiusi/risolti
-UPDATE fascicolo SET stato = 'Archiviato' WHERE codice = 'SPA/2023/005'; -- ID 5 (già archiviato, confermiamo)
-UPDATE fascicolo SET stato = 'Archiviato' WHERE codice = 'SPA/2024/001'; -- ID 14
-
 -- Fascicoli di cybercrime risolti e archiviati
-UPDATE fascicolo SET stato = 'Archiviato' WHERE codice = 'CYB/2023/006'; -- ID 6
+UPDATE fascicolo SET stato = 'Chiuso' WHERE codice = 'CYB/2023/006'; -- ID 6
 UPDATE fascicolo SET stato = 'Archiviato' WHERE codice = 'CYB/2024/002'; -- ID 15
+
+
+-- --------------------------------------------------------------------------
+-- Esempi di query
+-- --------------------------------------------------------------------------
+
+-- 1. dettagli dei reperti del fascicolo con codice OMI/2023/002
+select *
+from dettagli_reperti
+where codice_fascicolo = 'OMI/2023/002';
+
+
+
+
+
+
+
+
+
+
+
+
+
 

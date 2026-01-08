@@ -1,3 +1,19 @@
+-- --------------------------------------------------------------------------
+-- Ardi Ndreu - 
+-- Rayan Moh'd -
+-- Swaran Singh - 7159864
+-- --------------------------------------------------------------------------
+-- --------------------------------------------------------------------------
+-- Ambiente:
+-- Windows 11
+-- MySQL Server 8.0
+-- MySQL Workbench 8.0.43
+-- --------------------------------------------------------------------------
+-- --------------------------------------------------------------------------
+-- eserguire questo file con il pulsante execute everything (fulmine senza cursore)
+-- --------------------------------------------------------------------------
+
+
 drop database if exists prove_forense;
 create database prove_forense;
 use prove_forense;
@@ -127,18 +143,18 @@ create table analisi_laboratorio (
 delimiter $$
 
 -- 1. risali_albero_reperti: risale l'albero dei reperti e ritorna la lista dei padri
-create procedure risali_albero_reperti(in id_reperto int, in livello int)
+create procedure risali_albero_reperti(in id_reperto int)
 begin
 	with recursive albero as (
-		select *, 0 as livello
+		select id, codice, categoria, descrizione, 0 as livello
         from reperto
         where id = id_reperto
         
         union all
         
-        select padre.*, figlio.livello + 1
+        select padre.id, padre.codice, padre.categoria, padre.descrizione, figlio.livello + 1
         from reperto padre
-        inner join albero figlio on padre.id = filgio.id_reperto_padre
+		join albero figlio on padre.id = filgio.id_reperto_padre
     )
     select * from albero;
 end $$
@@ -147,15 +163,15 @@ end $$
 create procedure trova_tutti_discendenti(in id_reperto int)
 begin
 	with recursive albero as (
-		select *, 0 as livello
+		select id, codice, categoria, descrizione, 0 as livello
         from reperto
         where id = id_reperto_padre
         
         union all
         
-        select figlio.*, livello - 1
+        select figlio.id, filgio.codice, figlio.categoria, figlio.descrizione, livello - 1
         from reperto figlio
-        inner join albero padre on figlio.id_reperto_padre = padre.id
+		join albero padre on figlio.id_reperto_padre = padre.id
     )
     select * from albero;
 end $$
@@ -338,7 +354,7 @@ begin
 end $$
 
 
--- 6. blocco fascicolo chiuso (insert): persone coinvolte
+-- 5.2 blocco fascicolo chiuso (insert): persone coinvolte
 create trigger check_no_insert_coinvolgimento_caso_chiuso_archiviato
 before insert on coinvolgimento
 for each row
@@ -355,7 +371,7 @@ begin
     end if;
 end $$
 
--- 6.1 blocco fascicolo chiuso (update): persone coinvolte
+-- 5.3 blocco fascicolo chiuso (update): persone coinvolte
 create trigger check_no_update_coinvolgimento_caso_chiuso_archiviato
 before update on coinvolgimento
 for each row
@@ -373,7 +389,7 @@ begin
 end $$
 
 
--- 7. blocco fascicolo chiuso (insert): analisi
+-- 5.4 blocco fascicolo chiuso (insert): analisi
 create trigger check_no_insert_analisi_caso_chiuso_archiviato
 before insert on analisi_laboratorio
 for each row
@@ -391,7 +407,7 @@ begin
     end if;
 end $$
 
--- 7.1 blocco fascicolo chiuso (update): analisi
+-- 5.5 blocco fascicolo chiuso (update): analisi
 create trigger check_no_update_analisi_caso_chiuso_archiviato
 before update on analisi_laboratorio
 for each row
@@ -409,7 +425,7 @@ begin
     end if;
 end $$
 
--- 8. un fascicolo chiuso non può essere modificato, e l'unica modifica
+-- 5.6 un fascicolo chiuso non può essere modificato, e l'unica modifica
 -- consentita su un fascicolo archiviato è la riapertura
 create trigger check_modifiche_fascicolo_chiuso_archiviato
 before update on fascicolo
@@ -432,9 +448,9 @@ begin
 	end if;
 end $$
 
--- 9 accettare solo modifiche consentite
+-- 6 accettare solo modifiche consentite
 
--- 9.1 categoria reato
+-- 6.1 categoria reato
 create trigger strict_update_categoria_reato
 before update on categoria_reato
 for each row
@@ -443,7 +459,7 @@ begin
     set message_text = 'errore: le categorie di reato sono non modificabili.';
 end $$
 
--- 9.2 luogo
+-- 6.2 luogo
 -- un luogo fisico non cambia indirizzo.
 create trigger strict_update_luogo
 before update on luogo
@@ -453,7 +469,7 @@ begin
     set message_text = 'errore: i luoghi registrati non possono essere alterati per garantire la coerenza storica.';
 end $$
 
--- 9.3 categoria fascicolo
+-- 6.3 categoria fascicolo
 create trigger strict_update_categoria_fascicolo
 before update on categoria_fascicolo
 for each row
@@ -462,7 +478,7 @@ begin
     set message_text = 'errore: non è possibile modificare questa tabella';
 end $$
 
--- 9.4 coinvolgimento
+-- 6.4 coinvolgimento
 create trigger strict_update_coinvolgimento
 before update on coinvolgimento
 for each row
@@ -471,7 +487,7 @@ begin
     set message_text = 'errore: reinserire il soggetto con il nuovo ruolo.';
 end $$
 
--- 9.5 catena custodia (log storico)
+-- 6.5 catena custodia (log storico)
 create trigger strict_update_catena_custodia
 before update on catena_custodia
 for each row
@@ -480,21 +496,16 @@ begin
     set message_text = 'errore: non è possibile modificare i log';
 end $$
 
--- 9.6 persona
--- consentito: correggere nome, cognome, codice fiscale, data di nascita
--- vietato: cambiare id
+-- 6.6 persona
 create trigger strict_update_persona
 before update on persona
 for each row
 begin
-    if new.id <> old.id or
-    new.codice_fiscale <> old.codice_fiscale then
-        signal sqlstate '45000'
-        set message_text = 'errore: impossibile modificare id';
-    end if;
+	signal sqlstate '45000'
+	set message_text = 'errore: di una persona è consentito cambiare solo nome o cognome';
 end $$
 
--- 9.7 agente
+-- 6.7 agente
 -- consentito: grado (promozione), dipartimento (trasferimento)
 create trigger strict_update_agente
 before update on agente
@@ -507,7 +518,7 @@ begin
     end if;
 end $$
 
--- 9.8 fascicolo
+-- 6.8 fascicolo
 -- consentito: stato (chiudere/archiviare), priorità, agente responsabile
 create trigger strict_update_fascicolo
 before update on fascicolo
@@ -521,9 +532,8 @@ begin
     end if;
 end $$
 
--- 9.9 reperto
+-- 6.9 reperto
 -- consentito: descrizione (dettagli), id_luogo_corrente (automatico)
--- vietato: tutto il resto
 create trigger strict_update_reperto
 before update on reperto
 for each row
@@ -532,7 +542,7 @@ begin
     if new.id <> old.id or 
        new.codice <> old.codice or 
        new.categoria <> old.categoria or 
-       new.id_reperto_padre <> old.id_reperto_padre or  -- blocca modifica genealogia (stop loop)
+       new.id_reperto_padre <> old.id_reperto_padre or
        new.id_fascicolo <> old.id_fascicolo or
        new.data_inserimento <> old.data_inserimento then
         signal sqlstate '45000'
@@ -540,7 +550,7 @@ begin
     end if;
 end $$
 
--- 9.10 analisi laboratorio
+-- 6.10 analisi laboratorio
 create trigger strict_update_analisi_laboratorio
 before update on analisi_laboratorio
 for each row
@@ -552,9 +562,47 @@ end $$
 delimiter ;
 
 
+-- --------------------------------------------------------------------------
+-- Viste
+-- --------------------------------------------------------------------------
 
 
+-- 1. dettagli legati ad ai reperti
+create or replace view dettagli_reperti as
+	select
+		r.codice as codice_reperto, r.descrizione, r.categoria, r.data_inserimento,
+		f.codice as codice_fascicolo, f.stato,
+		l.nome as luogo_corrente,
+		a.esito as analisi
+	from reperto r
+	join fascicolo f on r.id_fascicolo = f.id 
+	join luogo l on r.id_luogo_corrente = l.id
+	join analisi_laboratorio a on r.id = a.id_reperto;
 
+-- 2. storico spostamenti
+create or replace view storico_spostamenti as
+	select
+		r.codice as codice_reperto,
+		cc.data_movimento,
+		l.nome as luogo_destinazione,
+		concat(p.nome, ' ', p.cognome) as agente_responsabile,
+		cc.descrizione as motivo_spostamento
+	from catena_custodia cc
+	join reperto r on cc.id_reperto = r.id
+	join luogo l on cc.id_luogo = l.id
+	join persona p on cc.id_agente_responsabile = p.id
+	join agente aa on p.id = aa.id
+	order by cc.data_movimento desc;
+
+-- 3. registro dei coinvolgimenti
+create or replace view registro_coinvolgimenti as
+	select
+		f.codice as codice_fascicolo, f.stato, f.priorita,
+        concat(p.nome, ' ', p.cognome) as soggetto, 
+        c.tipo, c.descrizione as note
+    from coinvolgimento c
+    join fascicolo f on f.id = c.id_fascicolo
+    join persona p on p.id = c.id_persona;
 
 
 
