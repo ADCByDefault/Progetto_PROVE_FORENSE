@@ -242,7 +242,7 @@ for each row
 begin
 	if(new.stato != 'Aperto') then
 		signal sqlstate '45000'
-        set message_text = 'errore: imposssibile creare fascicolo archiviato o chiuso';
+        set message_text = 'errore: impossibile creare fascicolo archiviato o chiuso';
 	end if;
 end$$
 
@@ -263,7 +263,7 @@ begin
 end $$
 
 -- 4. sicurezza (insert): non è accettata l'analisi se l'analista è coinvolto
--- nel caso del reperto su cui ha laborato
+-- nel caso del reperto su cui ha lavorato
 create trigger check_insert_analista_integrita_caso
 before insert on analisi_laboratorio
 for each row
@@ -301,7 +301,7 @@ begin
     end if;
 end $$
 
--- 4.2 conflitto interessi: non posso aggiungere l'agente resabile nei coinvolti
+-- 4.2 conflitto interessi: non posso aggiungere l'agente responsabile nei coinvolti
 -- devo prima sollevarlo dall'incarico, per non creare incongruenze.
 create trigger check_insert_conflitto_interessi_agente_coinvolgimento
 before insert on coinvolgimento
@@ -320,7 +320,7 @@ begin
 end $$
 
 -- 4.3 conflitto interessi: un agente non può essere responsabile di un reperto se coinvolto nel caso.
-create trigger check_inseret_conflitto_agente_catena_custodia
+create trigger check_insert_conflitto_agente_catena_custodia
 before insert on catena_custodia
 for each row
 begin
@@ -524,7 +524,7 @@ before update on persona
 for each row
 begin
 	signal sqlstate '45000'
-	set message_text = 'errore: di una persona è consentito cambiare solo nome o cognome';
+	set message_text = 'errore: non è consentito cambiare l\'anagrafe di una persona';
 end $$
 
 -- 6.7 agente
